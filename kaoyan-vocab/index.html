@@ -498,6 +498,7 @@ body {
           <div id="btn-start-home"><button class="start-btn" onclick="startStudy()">开始学习</button></div>
           <div class="reset-section">
             <button class="reset-btn" id="btn-reset">重置所有进度</button>
+            <button class="start-btn" id="btn-install-pwa" style="display:none;margin-top:8px;background:var(--accent);font-size:13px;padding:8px 16px;width:100%" onclick="installPWA()">安装App</button>
           </div>
         </div>
       </div>
@@ -8377,6 +8378,25 @@ loadSupabaseSDK(function() {
 
 // Render immediately from localStorage
 renderHome();
+
+// PWA install
+var deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  var btn = document.getElementById('btn-install-pwa');
+  if (btn) btn.style.display = 'block';
+});
+
+function installPWA() {
+  if (!deferredPrompt) { alert('请使用浏览器菜单中的「添加到主屏幕」'); return; }
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(function(r) {
+    deferredPrompt = null;
+    var btn = document.getElementById('btn-install-pwa');
+    if (btn) btn.style.display = 'none';
+  });
+}
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator && location.protocol === 'https:') {

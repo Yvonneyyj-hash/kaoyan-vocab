@@ -7643,24 +7643,28 @@ function showResults() {
   allPassed.forEach(w => masteredSet.add(w.w));
   state.masteredWords = [...masteredSet];
 
-  // Save mistakes to mistakeBank for next day
+  // Accumulate mistakes for today (merge with earlier batches)
   const today = getToday();
   if (wrongWords.length > 0) {
-    state.mistakeBank[today] = wrongWords;
-  } else {
-    // Clear today's mistakes if all correct
-    delete state.mistakeBank[today];
+    var existingMistakes = state.mistakeBank[today] || [];
+    wrongWords.forEach(function(w) {
+      if (!existingMistakes.find(function(e) { return e.w === w.w; })) {
+        existingMistakes.push(w);
+      }
+    });
+    state.mistakeBank[today] = existingMistakes;
   }
 
-  // Save detailed answers for calendar review
+  // Merge daily answers with existing from earlier batches
+  var existingAnswers = state.dailyAnswers[today] || { cnAnswers: [], enAnswers: [] };
   state.dailyAnswers[today] = {
-    cnAnswers: state.quizCN.answers.map(a => ({ w: a.word.w, user: a.userAnswer, correct: a.correct })),
-    enAnswers: state.quizEN.answers.map(a => ({ w: a.word.w, user: a.userAnswer, correct: a.correct }))
+    cnAnswers: existingAnswers.cnAnswers.concat(state.quizCN.answers.map(a => ({ w: a.word.w, user: a.userAnswer, correct: a.correct }))),
+    enAnswers: existingAnswers.enAnswers.concat(state.quizEN.answers.map(a => ({ w: a.word.w, user: a.userAnswer, correct: a.correct })))
   };
-  // Save to history
+  // Accumulate history for today (add to earlier batches, don't overwrite)
   if (!state.history[today]) state.history[today] = { count: 0, mastered: 0 };
-  state.history[today].count = total;
-  state.history[today].mastered = allPassed.length;
+  state.history[today].count += total;
+  state.history[today].mastered += allPassed.length;
   saveState();
 
   // Build review HTML from wrong answers
